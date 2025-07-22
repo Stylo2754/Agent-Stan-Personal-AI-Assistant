@@ -1,0 +1,165 @@
+{
+  "name": "Check Availability",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "endDate"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "813ef0e6-fad1-49f6-ad7c-5a74b3dac3b8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "stanley.lo.2754@gmail.com",
+          "mode": "list",
+          "cachedResultName": "stanley.lo.2754@gmail.com"
+        },
+        "timeMax": "={{ $json.endDate }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -100
+      ],
+      "id": "913bd500-f62a-4df1-967c-17499f5ff180",
+      "name": "Get availability in a calendar (Personal)",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NtBcXZKA5ISqFuMW",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        20
+      ],
+      "id": "9ca145e6-2efd-43c6-af3e-9e609eca2703",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Get All Event Data ---\nconst events = $input.all();\n\n// If there are no input events, exit with an error.\nif (!events || events.length === 0) {\n  return [{ json: { availabilityText: \"ERROR: Code node received no input events. Check Google Calendar nodes.\" } }];\n}\n\n// --- Configuration ---\nconst START_HOUR = 8;\nconst END_HOUR = 21;\nconst SLOT_DURATION_MINUTES = 30;\nconst BUFFER_MINUTES = 30;\nconst WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];\nconst busyIntervals = [];\n\n// --- Helper function to parse datetime as Pacific time ---\nfunction parseDateTime(dateTimeStr) {\n  // Remove the timezone offset and treat as Pacific time\n  const pacificTime = dateTimeStr.replace(/[+-]\\d{2}:\\d{2}$/, '');\n  return new Date(pacificTime);\n}\n\n// --- Process Events into Busy Intervals ---\nfor (const event of events) {\n  // Skip transparent events and cancelled events\n  if (event.json.transparency === 'transparent' || event.json.status === 'cancelled') {\n    continue;\n  }\n  \n  if (event.json.start && event.json.end) {\n    let start, end;\n    \n    // Handle date-only events (all-day events)\n    if (event.json.start.date && !event.json.start.dateTime) {\n      const startParts = event.json.start.date.split('-');\n      start = new Date(startParts[0], startParts[1] - 1, startParts[2]);\n      const endParts = event.json.end.date.split('-');\n      end = new Date(endParts[0], endParts[1] - 1, endParts[2]);\n    } else {\n      // Handle datetime events - treat as Pacific time\n      start = parseDateTime(event.json.start.dateTime);\n      end = parseDateTime(event.json.end.dateTime);\n    }\n    \n    if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {\n      // Add buffer before and after the event\n      const bufferedStart = new Date(start.getTime() - BUFFER_MINUTES * 60 * 1000);\n      const bufferedEnd = new Date(end.getTime() + BUFFER_MINUTES * 60 * 1000);\n      \n      busyIntervals.push({ \n        start: bufferedStart, \n        end: bufferedEnd,\n        summary: event.json.summary || 'Unknown event',\n        originalStart: event.json.start.dateTime || event.json.start.date,\n        originalEnd: event.json.end.dateTime || event.json.end.date\n      });\n    }\n  }\n}\n\n// --- Helper function to format time ---\nfunction formatTime(date) {\n  const h = date.getHours();\n  const m = date.getMinutes();\n  const hour = h % 12 === 0 ? 12 : h % 12;\n  const ampm = h < 12 ? 'am' : 'pm';\n  if (m === 0) return `${hour}${ampm}`;\n  return `${hour}:${m.toString().padStart(2, '0')}${ampm}`;\n}\n\n// --- Helper function to check if a time slot is busy ---\nfunction isSlotBusy(slotStart, slotEnd, busyIntervals) {\n  for (const busy of busyIntervals) {\n    if (slotStart < busy.end && slotEnd > busy.start) {\n      return true;\n    }\n  }\n  return false;\n}\n\n// --- Find and Format Availability ---\nlet availabilityLines = [];\nconst now = new Date();\nconst searchEndDate = new Date($json.endDate);\n\nfor (let d = 0; d < 14; d++) {\n  const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);\n  if (currentDay > searchEndDate) break;\n\n  const dayOfWeek = currentDay.getDay();\n  // Skip weekends\n  if (dayOfWeek === 0 || dayOfWeek === 6) {\n    continue;\n  }\n\n  // Get busy intervals for this specific day\n  const dayBusyIntervals = busyIntervals.filter(interval => {\n    const intervalDate = new Date(interval.start);\n    return intervalDate.getDate() === currentDay.getDate() && \n           intervalDate.getMonth() === currentDay.getMonth() && \n           intervalDate.getFullYear() === currentDay.getFullYear();\n  });\n\n  // Generate time slots and check availability\n  let availableSlots = [];\n  const dayStart = new Date(currentDay.getTime());\n  dayStart.setHours(START_HOUR, 0, 0, 0);\n  const dayEnd = new Date(currentDay.getTime());\n  dayEnd.setHours(END_HOUR, 0, 0, 0);\n\n  let currentSlot = new Date(dayStart.getTime());\n  \n  while (currentSlot < dayEnd) {\n    const slotEnd = new Date(currentSlot.getTime() + SLOT_DURATION_MINUTES * 60 * 1000);\n    \n    // Only consider slots in the future\n    if (currentSlot > now) {\n      if (!isSlotBusy(currentSlot, slotEnd, dayBusyIntervals)) {\n        availableSlots.push(new Date(currentSlot.getTime()));\n      }\n    }\n    \n    currentSlot = slotEnd;\n  }\n\n  if (availableSlots.length === 0) {\n    continue;\n  }\n\n  // Merge consecutive slots\n  let mergedSlots = [];\n  let currentMerge = {\n    start: availableSlots[0],\n    end: new Date(availableSlots[0].getTime() + SLOT_DURATION_MINUTES * 60 * 1000)\n  };\n\n  for (let i = 1; i < availableSlots.length; i++) {\n    const nextSlot = availableSlots[i];\n    const expectedEnd = new Date(currentMerge.end.getTime());\n    \n    if (nextSlot.getTime() === expectedEnd.getTime()) {\n      // Consecutive slot, extend the merge\n      currentMerge.end.setTime(nextSlot.getTime() + SLOT_DURATION_MINUTES * 60 * 1000);\n    } else {\n      // Non-consecutive slot, save current merge and start new one\n      mergedSlots.push(`${formatTime(currentMerge.start)}-${formatTime(currentMerge.end)}`);\n      currentMerge = {\n        start: nextSlot,\n        end: new Date(nextSlot.getTime() + SLOT_DURATION_MINUTES * 60 * 1000)\n      };\n    }\n  }\n  \n  // Add the last merge\n  mergedSlots.push(`${formatTime(currentMerge.start)}-${formatTime(currentMerge.end)}`);\n\n  if (mergedSlots.length > 0) {\n    const dateString = `${currentDay.getMonth() + 1}/${currentDay.getDate()}`;\n    availabilityLines.push(`${WEEK_DAYS[dayOfWeek]} ${dateString} ${mergedSlots.join(', ')}`);\n  }\n}\n\n// --- Return Final Result ---\nreturn [{\n  json: {\n    availabilityText: availabilityLines.join('\\n'),\n    debug: {\n      totalEvents: events.length,\n      busyIntervals: busyIntervals.length,\n      processedEvents: busyIntervals.map(interval => ({\n        start: interval.start.toISOString(),\n        end: interval.end.toISOString(),\n        summary: interval.summary,\n        localTime: `${formatTime(interval.start)}-${formatTime(interval.end)}`,\n        originalStart: interval.originalStart,\n        originalEnd: interval.originalEnd,\n        day: `${interval.start.getMonth() + 1}/${interval.start.getDate()}`\n      }))\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        20
+      ],
+      "id": "2369ab55-5534-4ed9-a550-e1e190d59b3b",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "slo24@students.claremontmckenna.edu",
+          "mode": "list",
+          "cachedResultName": "slo24@students.claremontmckenna.edu"
+        },
+        "timeMax": "={{ $json.endDate }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        140
+      ],
+      "id": "10651ab4-4aaa-4591-9916-971319c486f2",
+      "name": "Get availability in a calendar (School)",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NtBcXZKA5ISqFuMW",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get availability in a calendar (Personal)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get availability in a calendar (School)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar (Personal)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar (School)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8963b3d8-28bd-46f0-8310-f1e2c1aade46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf1230323624538b0769d3beea2ee9c542c3254b35ac1ab8ba98cd4a2e0b047f"
+  },
+  "id": "rgrN3c6vQZ6l9OmF",
+  "tags": []
+}

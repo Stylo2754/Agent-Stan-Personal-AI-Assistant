@@ -1,0 +1,371 @@
+{
+  "name": "Send Personal",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Subject"
+            },
+            {
+              "name": "To"
+            },
+            {
+              "name": "Message"
+            },
+            {
+              "name": "GcalStartTime"
+            },
+            {
+              "name": "sendAvailability",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1360,
+        0
+      ],
+      "id": "648d00bb-7cde-4529-8dcf-6e02350e6fb2",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "chatId": "7576507737",
+        "text": "=Here is your draft email:\n{{ $node[\"Package Email Data\"].json.Message }}\n\n{{ $node[\"Package Email Data\"].json.attachments.length > 0 ? \"Attachments: \" + $node[\"Package Email Data\"].json.attachments[0].fileName : \"\" }}\n\n{{ $json.GcalStartTime ? \"**A 30-minute Google Calendar invite will also be sent for \" + luxon.DateTime.fromISO($json.GcalStartTime).toFormat(\"ff\") + \".**\" : \"\" }}\n\nApprove to send, or disapprove to cancel.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve",
+                    "additionalFields": {
+                      "callback_data": "approve_send_personal"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Disapprove",
+                    "additionalFields": {
+                      "callback_data": "disapprove"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -340,
+        0
+      ],
+      "id": "ff1688fc-26e3-45e5-abd1-1f95252e80ab",
+      "name": "Send Draft for Approval",
+      "webhookId": "b0a8c9aa-1ca3-4297-9bcb-c6f99f683f5e",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "0711e7f0-1364-49e7-9b07-6ae15659cce8",
+      "name": "Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    binary: {\n      data: {\n        data: Buffer.from(JSON.stringify($json), 'utf8').toString('base64'),\n        mimeType: 'application/json',\n        fileName: 'email-data.json'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -740,
+        0
+      ],
+      "id": "0cbce2a9-9f66-4add-accb-674c7882db6a",
+      "name": "JSON to Binary3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code gathers data from multiple previous nodes to build the final email package.\n\n// 1. Get the 'To' and 'Subject' from the original trigger of this workflow.\nconst triggerData = $node[\"When Executed by Another Workflow\"].json;\nconst to = triggerData.To;\nconst subject = triggerData.Subject;\n\n// 2. Get the 'Message' from this node's direct input.\n// This works for both regular emails and availability emails.\nconst message = $json.Message;\n\n// 3. Get GcalStartTime from the trigger as well, just in case.\nconst gcalStartTime = triggerData.GcalStartTime;\n\n// 4. Prepare the final data object.\nconst emailData = {\n  To: to,\n  Subject: subject,\n  Message: message,\n  GcalStartTime: gcalStartTime,\n  attachments: []\n};\n\n// --- The original attachment handling code (no changes needed here) ---\nconst attachmentData = triggerData.attachments;\nif (attachmentData && attachmentData.data) {\n  let finalFileName;\n  const customFileName = triggerData.CustomFileName;\n  const fileExtension = attachmentData.fileExtension || 'bin';\n  if (customFileName) {\n    finalFileName = customFileName;\n  } else {\n    finalFileName = `attachment.${fileExtension}`;\n  }\n  const finalAttachment = {\n    content: attachmentData.data.data,\n    fileName: finalFileName,\n    mimeType: attachmentData.mimeType\n  };\n  emailData.attachments.push(finalAttachment);\n}\n// --- End of attachment handling ---\n\n// Return the final packaged data.\nreturn {\n  json: emailData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        0
+      ],
+      "id": "d9b40f58-5011-4abc-832d-a7d01d84c431",
+      "name": "Package Email Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "61252e3c-fe27-4194-8498-1d3e54c6bc01",
+              "leftValue": "={{ $json.sendAvailability }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1160,
+        0
+      ],
+      "id": "d20edfb4-19fe-4e53-9c9f-ddafa3a7ecc8",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rgrN3c6vQZ6l9OmF",
+          "mode": "list",
+          "cachedResultName": "Check Availability"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "endDate": "={{ $node[\"Calculate End Date\"].json.endDate }}"
+          },
+          "matchingColumns": [
+            "endDate"
+          ],
+          "schema": [
+            {
+              "id": "endDate",
+              "displayName": "endDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -820,
+        -180
+      ],
+      "id": "e1203322-f066-4242-9ab6-2a262a46324d",
+      "name": "Check Availability"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "42cf62f9-f2c6-4e3d-8b8b-c527f4c6a409",
+              "name": "endDate",
+              "value": "={{ $now.plus({ weeks: 2 }).toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -980,
+        -180
+      ],
+      "id": "9e548238-85f1-4bfe-931b-ce4671fb1f9a",
+      "name": "Calculate End Date"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "81a84131-f5af-4293-948f-a544917a162b",
+              "name": "Message",
+              "value": "=Hi, here is my availability for the next two weeks below, please let me know what works:{{ $node[\"Check Availability\"].json.availabilityText }}",
+              "type": "string"
+            },
+            {
+              "id": "5230fabc-96eb-4334-a059-94e4e0ee15eb",
+              "name": "To",
+              "value": "={{ $json.To }}",
+              "type": "string"
+            },
+            {
+              "id": "49fa2aa7-e24b-453b-b3df-8a4b738f516a",
+              "name": "Subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -660,
+        -180
+      ],
+      "id": "7749c7b9-8306-41e7-8c51-451b8fccc2ce",
+      "name": "Create Availability Message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Send Draft for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON to Binary3": {
+      "main": [
+        [
+          {
+            "node": "Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Package Email Data": {
+      "main": [
+        [
+          {
+            "node": "JSON to Binary3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Calculate End Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Package Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Create Availability Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate End Date": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Availability Message": {
+      "main": [
+        [
+          {
+            "node": "Package Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c2b5a19d-df08-4a67-adc2-b9ef24d64eaa",
+  "meta": {
+    "instanceId": "bf1230323624538b0769d3beea2ee9c542c3254b35ac1ab8ba98cd4a2e0b047f"
+  },
+  "id": "FrmBBokN3juPPyl0",
+  "tags": []
+}

@@ -1,0 +1,273 @@
+{
+  "name": "Reply Personal",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "  return [{\n    json: {\n      ReplyTo: $json.ReplyTo,\n      Message: $json.Message\n    },\n    binary: items[0].binary // Pass along any binary data (attachments)\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        340
+      ],
+      "id": "b431c60e-7b7d-4608-9ebf-1ddda91f137a",
+      "name": "Prepare Search Query"
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n     \"q\": \"from:{{$json.ReplyTo}}\",\n     \"maxResults\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        340
+      ],
+      "id": "745a2687-52e6-462c-865b-bb0e843919de",
+      "name": "Search for Latest Email (Personal)",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ge2d9yaTZni2Y8LG",
+          "name": "Personal Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{$json.messages[0].id}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n     \"q\": \"from:{{$('Search for Latest Email (Personal)').item.json.ReplyTo}}\",\n     \"maxResults\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        340
+      ],
+      "id": "021e9f11-d3de-4d4d-b90b-31a75483bf0a",
+      "name": "Get Message Details (Personal)",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ge2d9yaTZni2Y8LG",
+          "name": "Personal Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extracts reply headers AND packages attachment data.\n\nconst headers = $json.payload.headers;\nconst binary_data = $('Prepare Search Query').item.binary;\n\n// Extract all necessary data for the reply\nconst subject = headers.find(h => h.name === 'Subject')?.value || '';\nconst inReplyTo = headers.find(h => h.name === 'Message-ID')?.value || '';\nconst references = headers.find(h => h.name === 'References')?.value || inReplyTo;\nconst threadId = $json.threadId;\nconst replyTo = $('Prepare Search Query').item.json.ReplyTo;\nconst message = $('Prepare Search Query').item.json.Message;\n\n// Prepare the final data object to be saved to disk\nconst emailData = {\n    subject,\n    inReplyTo,\n    references,\n    threadId,\n    replyTo,\n    message,\n    attachments: []\n};\n\n// Check if binary data (the attachment) exists and package it\nif (binary_data && binary_data.data) {\n  // Convert the binary file to a Base64 string for storage\n  const content = binary_data.data.toString('base64');\n  \n  emailData.attachments.push({\n    filename: binary_data.fileName || 'attachment',\n    mimeType: binary_data.mimeType || 'application/octet-stream',\n    content: content // The Base64 version of the file\n  });\n}\n\n// Return the complete package to be saved\nreturn {\n  json: emailData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        340
+      ],
+      "id": "581a447e-0b66-402f-ab6a-7837d9a0bf87",
+      "name": "Extract Headers (Personal)"
+    },
+    {
+      "parameters": {
+        "chatId": "7576507737",
+        "text": "=Here is your draft email:\n{{$node[\"When Executed by Another Workflow\"].json[\"Message\"]}}\n\n{{$node[\"When Executed by Another Workflow\"].binary ? \"Attachments: \" + $node[\"When Executed by Another Workflow\"].binary.fileName : \"\"}}\n\nApprove to send, or disapprove to cancel.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve",
+                    "additionalFields": {
+                      "callback_data": "approve_reply_personal"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Disapprove",
+                    "additionalFields": {
+                      "callback_data": "disapprove"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        340
+      ],
+      "id": "c287d142-3bd4-4563-ac7e-dd5187cfde1b",
+      "name": "Send Draft for Approval",
+      "webhookId": "dcd057d2-f492-484a-b728-c37f733c0f8f",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "ReplyTo"
+            },
+            {
+              "name": "Message"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        340
+      ],
+      "id": "c0a345e4-e4cd-4776-b9f1-3597267fbd0b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    binary: {\n      data: {\n        data: Buffer.from(JSON.stringify($json), 'utf8').toString('base64'),\n        mimeType: 'application/json',\n        fileName: 'email-data.json'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        340
+      ],
+      "id": "3f5fb405-5460-4c9c-a88f-69576512f36f",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        920,
+        340
+      ],
+      "id": "e938c1eb-7a66-4357-b379-bf9663ab6014",
+      "name": "Read/Write Files from Disk"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Search Query": {
+      "main": [
+        [
+          {
+            "node": "Search for Latest Email (Personal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search for Latest Email (Personal)": {
+      "main": [
+        [
+          {
+            "node": "Get Message Details (Personal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Message Details (Personal)": {
+      "main": [
+        [
+          {
+            "node": "Extract Headers (Personal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Headers (Personal)": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Send Draft for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cb243e0d-1a55-498e-aec3-de7bd68c80d4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf1230323624538b0769d3beea2ee9c542c3254b35ac1ab8ba98cd4a2e0b047f"
+  },
+  "id": "DBDtDJmJxYSs9OCj",
+  "tags": []
+}

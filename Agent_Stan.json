@@ -1,0 +1,1854 @@
+{
+  "name": "Agent Stan",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0a40602a-1ae5-4e9c-aae9-c6bd9d2a234c",
+      "name": "Telegram Trigger",
+      "webhookId": "57e67939-5ec3-43a6-b655-b7c42a95e43b",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Give me a second...",
+        "additionalFields": {
+          "appendAttribution": "={{ $json.message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "532a9cbd-144f-4a62-b023-400f060d805f",
+      "name": "Send a text message",
+      "webhookId": "22f5b141-2a48-468e-a525-133f59f59141",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3738c2ff-824d-4589-9d1e-04b2459a5cd4",
+                    "leftValue": "={{  $('Telegram Trigger').item.json.message.document.file_id  }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Attachment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "7320d3ba-d685-489d-b0b5-3103e8df26d4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ef16fb9a-5480-4479-bd6d-996edf27e105",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "dd1530fd-4c58-49ac-b937-bf3c5e2137ee",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text ?? $('Telegram Trigger').item.json.message.caption ?? $('Transcribe Audio').item.json.text }}",
+        "options": {
+          "systemMessage": "=Your Persona: You are an AI assistant for Stanley Lo. Your primary function is to execute tasks and communicate in his distinct writing style.\n\nCurrent Time: You must be aware of the current time, which is {{$now}}. Use this for context when scheduling or referencing recent events.\n\nCore Capabilities:\n- Communication Assistance: Draft and respond to emails and messages in Stanley Lo's specific writing style, particularly when it relates to scheduling.\n- Calendar Management: Schedule, edit, reschedule, or delete events on Stanley Lo's calendar when explicitly instructed.\n\nCore Writing Style: Stanley Lo\nWhen performing communication tasks, you are to adopt a semi-professional, friendly, and appreciative tone. Your writing should be clear, concise, and action-oriented, while always remaining polite and personable.\n\nSubject Lines: Make sure to keep all subject lines for emails short, concise, & professional & should be related to what you have already drafted for the email.\n\nKey Characteristics & Intricate Details:\n- Tone & Attitude:\n  - Enthusiastic & Positive: Use exclamation points judiciously to convey genuine excitement and friendliness (e.g., \"I'll see you then!\", \"Thank you so much!\").\n  - Appreciative: Almost every message, especially thank-you notes and follow-ups, must express gratitude. Be specific when possible (e.g., \"Thank you for the chat & making time for me today,\" \"Your advice really helped me be more confident...\").\n  - Respectful & Humble: Acknowledge the other person's time and busy schedule (e.g., \"I know you've been really busy,\" \"Thank you for your time\").\n- Structure & Phrasing (for Scheduling):\n  - Greetings: Start messages with \"Hi [Name],\" or \"Hello [Name],\". Use \"Hey [Name],\" for slightly more informal follow-ups.\n  - Scheduling & Logistics: Be direct and efficient.\n  - When confirming a time, use phrases like, \"Yes that works,\" or \"[Time] works perfectly for me!\"\n  - Immediately follow up with the action taken: \"I just sent you a gcal invite,\" or \"I just sent an invite for...\"\n  - Conclude scheduling messages with a friendly confirmation: \"I'll see you then!\" or \"we'll use the google meet link in the invite.\"\n- Common Vocabulary: Use contractions to maintain a conversational feel (\"I'm,\" \"you're,\" \"I'll,\" \"didn't\"). Incorporate phrases like \"hop on a call,\" or \"shoot me a couple times\" where appropriate.\n- Closings:\n  - End your messages with one of the following, depending on the context: \"Best,\", \"Thank you for your time,\", or \"All the best,\".\n  - Always sign off with: Stanley Lo\n\nTool Selection:\n- To send a new email from the school account, the prompt must begin with \"From School to [email address]\". This will use the \"Send School\" tool.\n- To send a new email from the personal account, the prompt must begin with \"From Personal to [email address]\". This will use the \"Send Personal\" tool.\n- To reply to an email from the school account, the prompt must state \"From School reply to [email address]\". This will use the \"Reply School\" tool.\n- To reply to an email from the personal account, the prompt must state \"From Personal reply to [email address]\". This will use the \"Reply Personal\" tool.\n\nGuardrails & Critical Instructions:\n- No Hallucinations: You must not invent any information, including personal details, past conversations, or events. Your responses must be grounded in the context provided.\n- No Unverified Assumptions - Ask Questions: This is your most important rule. If a request is ambiguous or lacks the necessary details, you are required to ask clarifying questions before taking action.\n  - Scheduling Example: If the user says, \"Send an invite to Julia for tomorrow,\" you must ask: \"What time should I schedule the meeting for, and what should be the title of the invite?\"\n  - Editing Example: If the user says, \"Reschedule my meeting with Stephen,\" you must ask: \"Which meeting with Stephen are you referring to? And what is the new date and time for the meeting?\"\n  - Deletion Example: If the user says, \"Delete my 1-on-1,\" you must ask: \"To confirm, you want me to delete the upcoming 1-on-1 with [Name] on [Date] at [Time]?\"\n- Adhere Strictly to the Persona: When communicating, do not deviate from the writing style outlined above. Every response you generate should be indistinguishable from something Stanley Lo would write himself. Maintain the semi-professional tone; avoid being overly casual or stiffly formal.\n\nTool Usage Instructions:\n- When using the \"Reply Personal\" or \"Reply School\" tools, you must provide the following fields as input to the tool:\n  - ReplyTo: The recipient's email address (string).\n  - Message: The full HTML content of your reply (string).\n  - attachments: Any files to attach (optional; if present, provide as an array or binary data).\n- When composing an email, always sign off with \"Stanley Lo\" as the sender’s name.\n- Never include my instructions, commands, or meta-comments in the email body. Only use the information I provide to craft a natural, original reply in my writing style, as if you were me.\n- If I give you a command (e.g., \"reply to this email saying...\"), do not mention the command itself—just write the reply as if you are me, addressing the recipient directly.\n- Do not mention that you are replying \"from school\" or reference the recipient's email address in the body unless I explicitly ask for it.\n- **Crucially, format all email `Message` content as proper HTML.** Use `<p>` tags for paragraphs and `<br>` tags for line breaks to ensure correct spacing. For example: `<p>Hi Stanley,</p><p>I would love to have a meeting with you...</p><p>Best,<br>Stanley Lo</p>`\n\nTool Selection:\n- To send a new email from the school account, the prompt must begin with \"From School to [email address]\". This will use the \"Send School\" tool.\n- **When using the \"Send School\" or \"Send Personal\" tools, it is a mandatory requirement that you extract the recipient's email address from the user's prompt and pass it to the `To` parameter of the tool.**\n\n- To reply to an email from the school account, the prompt must state \"From School reply to [email address]\". This will use the \"Reply School\" tool.\n- **(Add this new rule) --> When using the \"Reply School\" or \"Reply Personal\" tools, it is a mandatory requirement that you extract the recipient's email address from the user's prompt and pass it to the `ReplyTo` parameter of the tool.**\n\"If a prompt to send an email also includes a request to 'send a gcal invite' or schedule a meeting, you must extract the startTime for that event. Then, you must pass this time as an additional parameter named GcalStartTime to the same Send School or Send Personal tool you are already using. The tool will handle both the email and the calendar event.\"\n\n\"When a prompt includes 'send my availability', you must use the appropriate tool (Send School or Send Personal) and adhere to these rules: You must pass a boolean parameter named sendAvailability with a BOOLEAN value of true, NOT A STRING for both Send School & Send Personal tools. You must pass a string parameter named Subject with the value \"Stanley's Availability\". You must not provide a Message parameter.\"\n\n\"When you extract a startTime for a calendar event, you must format it as a complete ISO 8601 string, including the full date, time, and timezone offset. For example, if the current time is {{$now}} and the user says 'tomorrow at 7:30pm,' you must output a string like 2025-07-16T19:30:00-07:00.\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        0
+      ],
+      "id": "a9809ca7-6b0f-4cb4-83dc-5397914863ec",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1720,
+        200
+      ],
+      "id": "f651cc9d-d38b-494b-9fe2-ce9afec306a0",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "crutFjjO9TJr7jrQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    },
+                    "id": "796ffa9f-d1c1-4308-9d01-9cb8aaeb4670"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "=Text Reply"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "af3472b8-babc-48b7-aa0f-33f46cd60994",
+                    "leftValue": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio Reply"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2040,
+        20
+      ],
+      "id": "4c2de499-50e2-4658-a714-5b6a652c1458",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1860,
+        200
+      ],
+      "id": "e70d1fbc-ef4f-4526-b643-adfb99c3b1a3",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2420,
+        20
+      ],
+      "id": "9fbcc4d4-9c4e-4e62-9f08-9c8d825f5590",
+      "name": "Send a text message1",
+      "webhookId": "8a9210fe-722c-46b7-ac46-741cd3c7762f",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        180
+      ],
+      "id": "4a79678a-ef8b-4269-beee-de3220a86a93",
+      "name": "Get Audio File",
+      "webhookId": "3c7c3137-4b12-491c-a027-524e094c340a",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $('AI Agent').item.json.output }}",
+        "voice": "onyx",
+        "options": {
+          "response_format": "opus"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2200,
+        260
+      ],
+      "id": "7f7239fd-88d4-4257-aab4-82f62ecc210d",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "crutFjjO9TJr7jrQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Switch').item.json.result.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {
+          "fileName": "agent_response.opus",
+          "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2420,
+        260
+      ],
+      "id": "0413c3d1-5ac7-435b-83f9-df59dcd4cb3d",
+      "name": "Send an audio file",
+      "webhookId": "7d787948-c97a-4e70-afc5-31e2c2ee71e1",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1340,
+        180
+      ],
+      "id": "9f972520-6084-4ee7-8d4e-5f0e3e3013bc",
+      "name": "Transcribe Audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "crutFjjO9TJr7jrQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "DBDtDJmJxYSs9OCj",
+          "mode": "list",
+          "cachedResultName": "Reply Personal"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ReplyTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('ReplyTo', ``, 'string') }}",
+            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ReplyTo",
+              "displayName": "ReplyTo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attachments",
+              "displayName": "attachments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CustomFileName",
+              "displayName": "CustomFileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1900,
+        360
+      ],
+      "id": "553e3262-625a-44cf-99a8-b98b3b331bd4",
+      "name": "Reply Personal"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "cyuSM1TUMkqMiwzm",
+          "mode": "list",
+          "cachedResultName": "Reply School"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ReplyTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('ReplyTo', ``, 'string') }}",
+            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ReplyTo",
+              "displayName": "ReplyTo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "attachments",
+              "displayName": "attachments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CustomFileName",
+              "displayName": "CustomFileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2020,
+        360
+      ],
+      "id": "c107d11d-5f86-45ba-b52c-d91bcb125cff",
+      "name": "Reply School"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "eA37IX61XSThIXbI",
+          "mode": "list",
+          "cachedResultName": "Send School"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+            "To": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+            "GcalStartTime": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('GcalStartTime', ``, 'string') }}",
+            "sendAvailability": "={{ $fromAI('sendAvailability', ``, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "GcalStartTime",
+              "displayName": "GcalStartTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sendAvailability",
+              "displayName": "sendAvailability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        360
+      ],
+      "id": "df9fe0b1-3abf-496d-9622-302bd5fc9dc1",
+      "name": "Send School"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "FrmBBokN3juPPyl0",
+          "mode": "list",
+          "cachedResultName": "Send Personal"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+            "To": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+            "GcalStartTime": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('GcalStartTime', ``, 'string') }}",
+            "sendAvailability": "={{ $fromAI('sendAvailability', ``, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "GcalStartTime",
+              "displayName": "GcalStartTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sendAvailability",
+              "displayName": "sendAvailability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1660,
+        360
+      ],
+      "id": "e98ef520-73c7-4820-9068-b1193e3135e2",
+      "name": "Send Personal"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{$('Telegram Trigger').item.json.message.document.file_id}}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        -100
+      ],
+      "id": "78dc954e-8a54-47f7-a520-febb14643b54",
+      "name": "Get Attachment",
+      "webhookId": "317b1325-c8b2-4029-8f36-f2513ab1ec8f",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "approve_send_school",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a5d90213-4735-4f3f-8458-3f195101a38e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Send School"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "55403025-8eaf-499f-b1e2-d96925c5b67b",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "approve_send_personal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Send Personal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1e5b3b94-d28c-4fc1-a76b-8975ebe5b0c2",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "approve_reply_school",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reply School"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "19b77554-435f-4217-bedc-27ce90b1b297",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "approve_reply_personal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reply Personal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ba768ffc-342e-48aa-b7f0-b7857ddfef20",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "disapprove",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Disapprove"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        40,
+        560
+      ],
+      "id": "20c49a7a-2def-4cfb-ae2a-27c0c51bae2d",
+      "name": "Approval Action Switch"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "5f142358-927b-4188-9ef4-f0846abb46bf"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Route Message"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ff37317b-19db-4994-8ffb-bdfd04ea379a",
+                    "leftValue": "={{ $json.callback_query }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Route Button Press"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "a2effa20-0548-4cf4-a700-17790b41bd64",
+      "name": "Message/Button Press"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        360
+      ],
+      "id": "76f58c72-c88b-437a-8da4-a51156506bb7",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "fileSelector": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        420,
+        360
+      ],
+      "id": "b92f1da3-1a0d-47ba-9fb3-456c91a546bf",
+      "name": "Read Files from Disk"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "raw",
+              "value": "={{$node[\"Reconstruct Email Data\"].json.raw}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        360
+      ],
+      "id": "6e3bc413-181c-4f57-96dd-1644c03ae364",
+      "name": "Send Reply (School)",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SstS9UhXjXGrP7V1",
+          "name": "School Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reconstructs a NEW email from the data saved on disk.\n\nconst storedData = $json.data;\n\n// Extract all the stored data for the new email\nconst to = storedData.To;\nconst subject = storedData.Subject;\nconst message = storedData.Message;\nconst attachments = storedData.attachments || [];\n\n// Helper function to encode the final MIME message\nfunction encodeBase64(str) {\n  return Buffer.from(str)\n    .toString('base64')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_')\n    .replace(/=+$/, '');\n}\n\nconst boundary = 'n8n-boundary-' + Date.now();\n\n// Construct the MIME message for a NEW email\nlet mime = [\n  `To: ${to}`,\n  `Subject: ${subject}`,\n  'MIME-Version: 1.0',\n  `Content-Type: multipart/mixed; boundary=\"${boundary}\"`,\n  '',\n  `--${boundary}`,\n  'Content-Type: text/html; charset=\"UTF-8\"',\n  'Content-Transfer-Encoding: 7bit',\n  '',\n  message,\n];\n\n// Add attachments if they exist.\nfor (const att of attachments) {\n\n  // FIX: Perform the Base64 encoding here, at the last moment.\n  const contentBase64 = Buffer.from(att.content).toString('base64');\n\n  mime.push(\n    `--${boundary}`,\n    `Content-Type: ${att.mimeType}; name=\"${att.fileName}\"`,\n    'Content-Transfer-Encoding: base64',\n    `Content-Disposition: attachment; filename=\"${att.fileName}\"`,\n    '',\n    contentBase64 // Use the newly encoded string.\n  );\n}\nmime.push(`--${boundary}--`, '');\n\n// Return the raw message for sending.\nreturn [{\n  json: {\n    raw: encodeBase64(mime.join('\\r\\n'))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        360
+      ],
+      "id": "72e91ab7-d334-4117-9c37-b7dce24a4022",
+      "name": "Reconstruct Email Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0173d52e-214b-477b-a875-5ead8cdbb641",
+              "leftValue": "={{ $node[\"Extract from File\"].json.data.GcalStartTime }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        360
+      ],
+      "id": "f22b81eb-91ec-4f9e-9e5a-a234467b23ee",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Uy5iHsCN2KKpilua",
+          "mode": "list",
+          "cachedResultName": "Create Gcal Invite"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $node[\"Extract from File\"].json.data.To }}",
+            "accountType": "school",
+            "startTime": "={{ $node[\"Extract from File\"].json.data.GcalStartTime }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "startTime",
+              "displayName": "startTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "accountType",
+              "displayName": "accountType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        360
+      ],
+      "id": "fcf8fb0c-33a1-4772-a0bb-5960aa8c51fe",
+      "name": "Execute Workflow"
+    },
+    {
+      "parameters": {
+        "chatId": "7576507737",
+        "text": "The email was cancelled and was not sent.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        420,
+        1120
+      ],
+      "id": "a189cbc0-41af-4407-be21-47fa6932f120",
+      "name": "Fail",
+      "webhookId": "e126c20f-f3c3-4c37-9301-b11bad128da2",
+      "credentials": {
+        "telegramApi": {
+          "id": "FvWprWg0WcwFYlX8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "raw",
+              "value": "={{$node[\"Reconstruct Email Data1\"].json.raw}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        540
+      ],
+      "id": "85d49903-967e-4ceb-bc9f-89c98164e078",
+      "name": "Send Reply (Personal)",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ge2d9yaTZni2Y8LG",
+          "name": "Personal Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        540
+      ],
+      "id": "e40b88c3-fd03-439a-b937-6fd5b4dbd0ca",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "fileSelector": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        420,
+        540
+      ],
+      "id": "a12f84df-ad2d-4826-8be0-576b78dd7f8f",
+      "name": "Read Files from Disk1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reconstructs a NEW email from the data saved on disk.\n\nconst storedData = $json.data;\n\n// Extract all the stored data for the new email\nconst to = storedData.To;\nconst subject = storedData.Subject;\nconst message = storedData.Message;\nconst attachments = storedData.attachments || [];\n\n// Helper function to encode the final MIME message\nfunction encodeBase64(str) {\n  return Buffer.from(str)\n    .toString('base64')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_')\n    .replace(/=+$/, '');\n}\n\nconst boundary = 'n8n-boundary-' + Date.now();\n\n// Construct the MIME message for a NEW email\nlet mime = [\n  `To: ${to}`,\n  `Subject: ${subject}`,\n  'MIME-Version: 1.0',\n  `Content-Type: multipart/mixed; boundary=\"${boundary}\"`,\n  '',\n  `--${boundary}`,\n  'Content-Type: text/html; charset=\"UTF-8\"',\n  'Content-Transfer-Encoding: 7bit',\n  '',\n  message,\n];\n\n// Add attachments if they exist.\nfor (const att of attachments) {\n\n  // FIX: Perform the Base64 encoding here, at the last moment.\n  const contentBase64 = Buffer.from(att.content).toString('base64');\n\n  mime.push(\n    `--${boundary}`,\n    `Content-Type: ${att.mimeType}; name=\"${att.fileName}\"`,\n    'Content-Transfer-Encoding: base64',\n    `Content-Disposition: attachment; filename=\"${att.fileName}\"`,\n    '',\n    contentBase64 // Use the newly encoded string.\n  );\n}\nmime.push(`--${boundary}--`, '');\n\n// Return the raw message for sending.\nreturn [{\n  json: {\n    raw: encodeBase64(mime.join('\\r\\n'))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        540
+      ],
+      "id": "02856361-1b95-4a00-a1bc-1bacaeca728d",
+      "name": "Reconstruct Email Data1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Uy5iHsCN2KKpilua",
+          "mode": "list",
+          "cachedResultName": "Create Gcal Invite"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $node[\"Extract from File1\"].json.data.To }}",
+            "accountType": "personal",
+            "startTime": "={{ $node[\"Extract from File1\"].json.data.GcalStartTime }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "startTime",
+              "displayName": "startTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "accountType",
+              "displayName": "accountType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        540
+      ],
+      "id": "cb10d0bb-5060-466a-891a-b0b0f2910f0c",
+      "name": "Execute Workflow1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "658c7cbb-6cf1-4e4b-a17b-1d8407f185ee",
+              "leftValue": "={{ $node[\"Extract from File1\"].json.data.GcalStartTime }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1140,
+        540
+      ],
+      "id": "57c4f4bc-c31e-49cf-baaf-79a69ccbba5d",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "raw",
+              "value": "={{$node[\"Reconstruct Email Data2\"].json.raw}}"
+            },
+            {
+              "name": "threadId",
+              "value": "={{$node[\"Reconstruct Email Data2\"].json.threadId}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        720
+      ],
+      "id": "9f0cb7fa-67bf-48b3-9cb6-bba720668285",
+      "name": "Send Reply (School)1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SstS9UhXjXGrP7V1",
+          "name": "School Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        720
+      ],
+      "id": "4dd410ca-5c5f-4524-a8f1-e6afeaac3560",
+      "name": "Extract from File2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reconstructs a REPLY email from the data saved on disk.\n\nconst storedData = $json.data;\n\n// Extract all the stored data for the reply\nconst to = storedData.replyTo;\nconst subject = storedData.subject;\nconst inReplyTo = storedData.inReplyTo;\nconst references = storedData.references;\nconst threadId = storedData.threadId;\nconst message = storedData.message;\nconst attachments = storedData.attachments || [];\n\n// Helper function to encode the final MIME message\nfunction encodeBase64(str) {\n  return Buffer.from(str)\n    .toString('base64')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_')\n    .replace(/=+$/, '');\n}\n\nconst boundary = 'n8n-boundary-' + Date.now();\n\n// Construct the MIME message for the REPLY\nlet mime = [\n  `To: ${to}`,\n  `Subject: Re: ${subject}`,\n  `In-Reply-To: ${inReplyTo}`,\n  `References: ${references}`,\n  'MIME-Version: 1.0',\n  `Content-Type: multipart/mixed; boundary=\"${boundary}\"`,\n  '',\n  `--${boundary}`,\n  'Content-Type: text/html; charset=\"UTF-8\"',\n  'Content-Transfer-Encoding: 7bit',\n  '',\n  message,\n];\n\n// Add attachments if they exist, using the stored Base64 content\nfor (const att of attachments) {\n  mime.push(\n    `--${boundary}`,\n    `Content-Type: ${att.mimeType}; name=\"${att.filename}\"`,\n    'Content-Transfer-Encoding: base64',\n    `Content-Disposition: attachment; filename=\"${att.filename}\"`,\n    '',\n    att.content // Use the stored Base64 string directly\n  );\n}\nmime.push(`--${boundary}--`, '');\n\n// Return the raw message and threadId for sending\nreturn [\n  {\n    json: {\n      raw: encodeBase64(mime.join('\\r\\n')),\n      threadId: threadId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        720
+      ],
+      "id": "a8d5a9a6-ffb2-4721-a7a6-826772940948",
+      "name": "Reconstruct Email Data2"
+    },
+    {
+      "parameters": {
+        "fileSelector": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        420,
+        720
+      ],
+      "id": "d167838c-1dc4-4091-8657-954bc1f7bc18",
+      "name": "Read Files from Disk2"
+    },
+    {
+      "parameters": {
+        "fileSelector": "email-data.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        420,
+        920
+      ],
+      "id": "edce5b8a-293b-4cfb-8065-2d863a5a26c1",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "raw",
+              "value": "={{$node[\"Reconstruct Email Data3\"].json.raw}}"
+            },
+            {
+              "name": "threadId",
+              "value": "={{$node[\"Reconstruct Email Data3\"].json.threadId}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        920
+      ],
+      "id": "8e110b52-4e76-42b0-b260-8e16366be38e",
+      "name": "Send Reply (Personal)1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ge2d9yaTZni2Y8LG",
+          "name": "Personal Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        920
+      ],
+      "id": "bfc09f60-2faa-412a-bf99-0648737e4651",
+      "name": "Extract from File3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reconstructs a REPLY email from the data saved on disk.\n\nconst storedData = $json.data;\n\n// Extract all the stored data for the reply\nconst to = storedData.replyTo;\nconst subject = storedData.subject;\nconst inReplyTo = storedData.inReplyTo;\nconst references = storedData.references;\nconst threadId = storedData.threadId;\nconst message = storedData.message;\nconst attachments = storedData.attachments || [];\n\n// Helper function to encode the final MIME message\nfunction encodeBase64(str) {\n  return Buffer.from(str)\n    .toString('base64')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_')\n    .replace(/=+$/, '');\n}\n\nconst boundary = 'n8n-boundary-' + Date.now();\n\n// Construct the MIME message for the REPLY\nlet mime = [\n  `To: ${to}`,\n  `Subject: Re: ${subject}`,\n  `In-Reply-To: ${inReplyTo}`,\n  `References: ${references}`,\n  'MIME-Version: 1.0',\n  `Content-Type: multipart/mixed; boundary=\"${boundary}\"`,\n  '',\n  `--${boundary}`,\n  'Content-Type: text/html; charset=\"UTF-8\"',\n  'Content-Transfer-Encoding: 7bit',\n  '',\n  message,\n];\n\n// Add attachments if they exist, using the stored Base64 content\nfor (const att of attachments) {\n  mime.push(\n    `--${boundary}`,\n    `Content-Type: ${att.mimeType}; name=\"${att.filename}\"`,\n    'Content-Transfer-Encoding: base64',\n    `Content-Disposition: attachment; filename=\"${att.filename}\"`,\n    '',\n    att.content // Use the stored Base64 string directly\n  );\n}\nmime.push(`--${boundary}--`, '');\n\n// Return the raw message and threadId for sending\nreturn [\n  {\n    json: {\n      raw: encodeBase64(mime.join('\\r\\n')),\n      threadId: threadId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        920
+      ],
+      "id": "4741bc26-a312-4005-8ffe-8bf06687a2d7",
+      "name": "Reconstruct Email Data3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message/Button Press",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Personal": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply School": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send School": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Personal": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Attachment": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message/Button Press": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Approval Action Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply (School)": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct Email Data": {
+      "main": [
+        [
+          {
+            "node": "Send Reply (School)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Action Switch": {
+      "main": [
+        [
+          {
+            "node": "Read Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Files from Disk2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply (Personal)": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct Email Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct Email Data1": {
+      "main": [
+        [
+          {
+            "node": "Send Reply (Personal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File2": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct Email Data2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct Email Data2": {
+      "main": [
+        [
+          {
+            "node": "Send Reply (School)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Files from Disk2": {
+      "main": [
+        [
+          {
+            "node": "Extract from File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File3": {
+      "main": [
+        [
+          {
+            "node": "Reconstruct Email Data3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconstruct Email Data3": {
+      "main": [
+        [
+          {
+            "node": "Send Reply (Personal)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "783ed23e-058d-4b1b-919a-ec507ea8cc60",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf1230323624538b0769d3beea2ee9c542c3254b35ac1ab8ba98cd4a2e0b047f"
+  },
+  "id": "lUk6hs5riAAZXf8U",
+  "tags": []
+}
