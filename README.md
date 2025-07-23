@@ -88,3 +88,7 @@ The modular design allows for easy modification of the core logic by editing the
 - **Triage & Routing Logic:** To change how the agent handles different types of incoming messages (text, audio, attachments), edit the `Switch` nodes in `Agent_Stan.json`.
 - **Calendar Availability Logic:** The JavaScript code for calculating available time slots can be found in the `Code` node within `Check_Availability.json`.
 - **Email Construction Logic:** To modify how MIME messages are constructed for emails and replies, edit the `Reconstruct Email Data` nodes in `Agent_Stan.json`.
+
+### License
+
+This project is licensed under the **MIT License**.
