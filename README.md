@@ -1,6 +1,6 @@
 # Agent Stan: AI Executive Assistant
 
-Agent Stan is an AI agent that performs the duties of a personal executive assistant. It is designed to be a powerful, flexible, and extremely low-cost alternative to commercial automation tools, reducing monthly software costs by over 95% ($30+/monty --> $1/month for every 1000 emails sent).
+Agent Stan is an AI agent that performs the duties of a personal executive assistant. It is designed to be a powerful, flexible, and extremely low-cost alternative to commercial automation tools, reducing monthly software costs by over 95% ($30+/month --> $1/month for every 1000 emails sent).
 
 The system operates through a conversational interface on Telegram and is capable of handling complex, multi-step tasks involving email and calendar management across multiple accounts. All requests are processed with an average response time of ~2.5 seconds.
 
