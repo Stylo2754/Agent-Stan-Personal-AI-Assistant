@@ -34,7 +34,7 @@ The system operates through a conversational interface on Telegram and is capabl
 
 #### Prerequisites
 
-1.  **Automation Platform:** This project is built on a visual workflow automation platform that can import the provided `.json` files.
+1.  **Automation Platform:** This project is built on a visual workflow automation platform (n8n recommended) that can import the provided `.json` files.
 2.  **API Accounts:** You will need active accounts and API keys for:
     - OpenAI
     - Google (for Gmail and Google Calendar APIs)
