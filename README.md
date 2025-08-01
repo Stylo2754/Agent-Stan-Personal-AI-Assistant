@@ -1,3 +1,5 @@
+[![Watch YouTube Short](https://img.youtube.com/vi/UQ7q-NTiZKY/0.jpg)](https://www.youtube.com/shorts/UQ7q-NTiZKY)
+
 # Agent Stan: AI Executive Assistant
 
 Agent Stan is an AI agent that performs the duties of a personal executive assistant. It is designed to be a powerful, flexible, and extremely low-cost alternative to commercial automation tools, reducing monthly software costs by over 95% ($30+/month --> $1/month for every 1000 emails sent).
